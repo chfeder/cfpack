@@ -1,2 +1,1 @@
-# cfpack
-Christoph Federrath (CF) python package (cfpack)
+pypi/README.md

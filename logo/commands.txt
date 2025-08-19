@@ -1,0 +1,14 @@
+# run hydro.py
+../../hydro.py sn_sim -dens_file cfpack.png -cmap bone -save 'cfpack_frame' -vmin 0.5 -vmax 2.0 -map_only -dump_step 10 -tmax 0.13 -invert
+
+# convert frame pdfs to jpg
+shellutils.py convert_image -i *frame* -ot jpg
+
+# make initial movie
+shellutils.py make_movie -i *frame*.jpg -c mpeg4 -o cfpack.mp4
+
+# hold first frame for 2s
+shellutils.py make_movie -i cfpack.mp4 -o cfpack_hold.mp4 -c mpeg4 -ffmpeg_args -vf 'tpad=start_mode=clone:start_duration=2'
+
+# fade out from frame 500 over 50 frames
+ffmpeg -i cfpack_hold.mp4 -filter:v 'fade=out:500:50' -c:v mpeg4 cfpack_hold_fade.mp4
