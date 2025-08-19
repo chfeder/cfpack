@@ -9,6 +9,10 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     url="https://www.mso.anu.edu.au/~chfeder/codes/cfpack/cfpack.html",
+    project_urls={
+        "Source": "https://github.com/chfeder/cfpack",
+        "Documentation": "https://www.mso.anu.edu.au/~chfeder/codes/cfpack/doc/index.html",
+    },
     license="MIT",
     license_file="LICENSE",
     classifiers=[
