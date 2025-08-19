@@ -21,6 +21,26 @@ def import_matplotlibrc(fontscale=None):
         rcParams['font.size'] *= fontscale
         rcParams['legend.fontsize'] *= fontscale
 
+# === START get_frame ===
+# returns an object with the file and function name from which it is called
+def get_frame():
+    from inspect import currentframe, getouterframes
+    from os import path
+    class ret:
+        def __init__(self, file_, func_):
+            self.file = file_
+            self.func = func_
+            self.signature = file_+": "+func_+": "
+    frame = currentframe()
+    outer_frames = getouterframes(frame)
+    if len(outer_frames) < 2: return ret("-?-", "-?-")
+    # caller frame
+    caller = outer_frames[1]
+    file = path.basename(caller.filename)
+    func = caller.function
+    return ret(file, func)
+# === END get_frame ===
+
 # === START print ===
 # custom print() function override to show caller (module and function) information before actual print string,
 # plus options colourised output
@@ -99,6 +119,7 @@ class legend_formatter:
         self.textpad = textpad # pad between symbol/line and text label
         self.length = length # length of the symbol/line section
         self.fontsize = fontsize
+# === END legend_formatter ===
 
 # === START plot ===
 def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel='x', ylabel='y', label=None,
@@ -353,11 +374,16 @@ def plot_colorbar(cmap=None, label=None, vmin=None, vmax=None, log=False, symlog
 
 #=== START plot_multi_panel ===
 # combines several plots created with cfpack.plot() into a multi-panel figure
-def plot_multi_panel(figure_axes, nrows=1, ncols=1, width_panel=0.8, height_panel=0.8, col_sep=0.15, row_sep=0.15,
+def plot_multi_panel(figure_axes, nrows=None, ncols=None, width_panel=0.8, height_panel=0.8, col_sep=0.15, row_sep=0.15,
                      remove_old_fig=True, verbose=False, show=False, pause=None, save=None):
     import matplotlib.pyplot as plt
     # check for list
     if not isinstance(figure_axes, list): figure_axes = [figure_axes]
+    print("Number of panels: "+str(len(figure_axes)))
+    if nrows is None and ncols is None:
+        nrows = int(np.floor(np.sqrt(len(figure_axes))))
+        ncols = int(np.ceil(len(figure_axes)/nrows))
+        print("Automatically set nrows, ncols = "+str(nrows)+", "+str(ncols))
     # create output figure
     panel_figsize = figure_axes[0].figure.get_size_inches()
     figsize = (panel_figsize[0]*ncols, panel_figsize[1]*nrows)
@@ -387,12 +413,12 @@ def plot_multi_panel(figure_axes, nrows=1, ncols=1, width_panel=0.8, height_pane
 # internal plot helper function
 def show_or_save_plot(figax=None, show=None, pause=None, save=None):
     import matplotlib.pyplot as plt
-    import tempfile, pickle
+    import tempfile, dill
     if show or save:
         if figax is not None:
             # pickle figure axis to temporary file (so we can restore it, e.g., for plot_multi_panel(...))
             tmpfile = tempfile.NamedTemporaryFile(delete=False)
-            with open(tmpfile.name, 'wb') as fid: pickle.dump(figax, fid)
+            with open(tmpfile.name, 'wb') as fid: dill.dump(figax, fid)
         else:
             figax = plt.gca()
         if save: # save to file
@@ -410,7 +436,7 @@ def show_or_save_plot(figax=None, show=None, pause=None, save=None):
         def ax():
             ret_ax = figax # set to normal axis object by default (in case the user has not issued a show or save)
             try: # restore the axis of this plot from the temporary file if show or save was used
-                with open(tmpfile.name, 'rb') as fid: ret_ax = pickle.load(fid)
+                with open(tmpfile.name, 'rb') as fid: ret_ax = dill.load(fid)
             except Exception:
                 pass
             return ret_ax
@@ -457,12 +483,9 @@ def rgba2data(rgba_image, cmap_name, cmap_vmin, cmap_vmax):
 def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_random_draws=1000, dat_frac_for_systematic_perr=0.3,
         weights=None, scale_covar=True, params=None, fit_method='ls', plot_fit=False, mcmc_walkers=32, mcmc_steps=2000,
         verbose=1, *args, **kwargs):
-
     if fit_method not in ['ls', 'mcmc']: print("fit_method = '"+fit_method+"' not supported.", error=True)
-
     from lmfit import Model
     model = Model(func) # get lmfit model object
-
     # set up parameters
     lmfit_params = model.make_params() # make lmfit default params
     n_free_params = len(lmfit_params)
@@ -494,7 +517,6 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
         initial_params = generate_initial_params(len(model.param_names))
         for ip, pname in enumerate(model.param_names):
             model.set_param_hint(pname, value=initial_params[ip])
-
     # re-create fit parameter settings after parameter bounds or initial guesses have been determined
     lmfit_params = model.make_params() # update lmfit params
     # get initial parameter info
@@ -504,7 +526,6 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
     # dealing with weights or errors (1-sigma data errors in x and/or y)
     if weights is not None and ((xerr is not None) or (yerr is not None)):
         print("cannot use weights when either xerr or yerr is present", error=True)
-
     # function to compute and return parameter statistics (median, std, error range, and parameter samples)
     def get_param_stats(fit_result, samples):
         # prepare for return class
@@ -521,7 +542,6 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
             ret_perr.append(np.array([percentile_16-median, percentile_84-median])) # percentile distances from median
             ret_psamples.append(samples[:,ip]) # parameter samples
         return ret_popt, ret_pstd, ret_perr, ret_psamples
-
     # MCMC fitting
     if fit_method == 'mcmc':
         if verbose: print("Doing MCMC fitting...", color="green")
@@ -531,7 +551,6 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
         fit_result = model.fit(data=ydat, params=lmfit_params, weights=weights, method='emcee', fit_kws=emcee_kws, *args, **kwargs, **independent_vars_dict)
         ret_lmfit_result = fit_result # for return class below
         sampler = fit_result.sampler
-
         # estimate auto-correlation time
         try:
             tau = sampler.get_autocorr_time(tol=0) # estimate auto-correlation time
@@ -544,13 +563,10 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
             print("Chains are too short to estimate autocorrelation time reliably.", color="yellow")
             burnin = emcee_kws["steps"] // 4 # fallback to arbitrary choice
             thin = 1
-
         # get the parameter samples from the chains
         samples = sampler.get_chain(discard=burnin, thin=thin, flat=True) # discard burn-in and thin
-
         # extract fit parameters
         ret_popt, ret_pstd, ret_perr, ret_psamples = get_param_stats(fit_result, samples)
-
         if plot_fit:
             # check convergence visually
             import matplotlib.pyplot as plt
@@ -566,7 +582,6 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                 plot(x=[burnin,emcee_kws["steps"]], y=[p16,p16], color=color, linestyle="dashed") # plot 16th percentile
                 plot(x=[burnin,emcee_kws["steps"]], y=[p84,p84], color=color, linestyle="dashed") # plot 84th percentile
             show_or_save_plot(show=True)
-
     # Least-squares fitting
     if fit_method == 'ls':
         print("Doing least-squares fitting...", color="green")
@@ -596,7 +611,6 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                     for pname in fit_result.params:
                         popt.append(fit_result.params[pname].value)
                     popts.append(popt)
-
             if perr_method == "systematic":
                 from random import seed, randrange
                 n_dat_frac = max([n_free_params+1, int(np.ceil(max([0,min([dat_frac_for_systematic_perr,1])])*len(xdat)))]) # take only a fraction of the original data size (minimally, the number of parameters + 1)
@@ -645,7 +659,6 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                 else:
                     ret_perr.append(None)
                 ret_psamples.append(None)
-
     class ret: # class object to be returned
         lmfit_result = ret_lmfit_result # lmfit object
         pnames = model.param_names # parameter names (list)
@@ -658,11 +671,9 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
             mcmc_tau = tau
             mcmc_burnin = burnin
             mcmc_thin = thin
-
     if verbose:
         for ip, pname in enumerate(ret.pnames):
             print("fit parameters: ", pname+" = ", ret.popt[ip], ret.perr[ip], highlight=True)
-
     if plot_fit:
         # do corner plots if did sampling (either through MCMC or LS uncertainty sampling)
         if len(ret.psamples.shape) == 2:
@@ -674,9 +685,7 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
         xfit = np.linspace(np.min(xdat), np.max(xdat), 500)
         plot(x=xfit, y=func(xfit, *ret.popt), label="fit")
         plot(show=True)
-
     return ret
-
 # === END fit ===
 
 # === START logspace ===
@@ -694,6 +703,7 @@ def logspace(start, stop, *args, return_centre=False, **kwargs):
 # === END logspace ===
 
 # === START sym log space ===
+# lin_thresh can be list of 2 elements to control [min, max] for linear range
 def symlogspace(start, stop, num=100, base=10.0, lin_thresh=1e-2, num_lin=3, return_centre=False):
     if start >= stop: print("start must be < stop", error=True)
     if num < num_lin: print("num must be > num_lin; input values are num, num_lin: ", num, num_lin, error=True)
@@ -831,11 +841,13 @@ def run_shell_command(cmd, quiet=False, print_only=False, capture=False, **kargs
         sp_result = run(cmd, capture_output=capture, text=True, shell=True, env=environ.copy())
         return sp_result
 
+# === START check_for_overwrite ===
 def check_for_overwrite(filename):
     from os.path import isfile
     if isfile(filename):
         inp = input("Warning: file '"+filename+"' exisits; press 'p' to overwrite...")
         if inp != 'p': exit()
+# === END check_for_overwrite ===
 
 # === function returning all sub-directories, including hidden dirs ===
 def get_dirs(dirname='.', include_base_dir=False, strip=False, verbose=1):
@@ -988,15 +1000,18 @@ def get_moments(x, pdf=None, xs=None, xe=None):
                 ret["kurt"] = np.nansum(ymid*((xmid-ret["mean"])/ret["std"])**4*dx) / norm - 3.0 # excess kurtosis
     return ret
 
-# === get the PDF of data and return centred bin values ===
+# === START get_pdf ===
+# get the PDF of data and return centred bin values
 def get_pdf(data, range=None, bins=200):
-    ret_pdf, x_edges = np.histogram(data, range=None, density=True, bins=bins)
-    x_mid_points = ( x_edges[1:] + x_edges[:-1] ) / 2.0
+    pdf, bin_edges = np.histogram(data, range=None, density=True, bins=bins)
+    bin_centres = ( bin_edges[1:] + bin_edges[:-1] ) / 2.0
     class ret:
-        pdf = ret_pdf
-        bin_edges = x_edges
-        bin_center = x_mid_points
-    return ret
+        def __init__(self, pdf_, bin_edges_, bin_centres_):
+            self.pdf = pdf_
+            self.bin_edges = bin_edges_
+            self.bin_centres = bin_centres_
+    return ret(pdf, bin_edges, bin_centres)
+# === END get_pdf ===
 
 # === bin data with bin_values (same size as data) into bins (number or array of bin edges) ===
 def get_binned_stats(data, bin_values, bins=None, statistic='mean', **kwargs):
@@ -1012,7 +1027,8 @@ def get_binned_stats_2d(data, bin_values_1, bin_values_2, bins=None, statistic='
     binned_stats = binned_statistic_2d(bin_values_1.flatten(), bin_values_2.flatten(), data.flatten(), bins=bins, statistic=statistic)
     return binned_stats.statistic, binned_stats.x_edge, binned_stats.y_edge
 
-# === Compute the Fourier (k-space) spectrum of 'data_in' with ncmp components in axis=0 ===
+# === START get_spectrum ===
+# Computes the Fourier (k-space) spectrum of 'data_in' with ncmp components in axis=0.
 # E.g., for a 64^3 dataset and 3 vector components, data.shape must be (3, 64, 64, 64).
 # E.g., for a 32^2 dataset with only 1 component, data.shape must be (32, 32).
 # Note that if 'data_in' is 2D or 3D, then the indices are in order data_in[x,[y,[z]]].
@@ -1174,6 +1190,7 @@ def get_spectrum(data_in, ncmp=1, binning='spherical', sum=False, return_ft_data
         ret['P_trv'] = spect_trv
     if return_ft_data: ret['Power_tot'] = power_tot # if the user wants to have the Fourier-transformed data (power) returned
     return ret # return dict with power spectrum data
+# === END get_spectrum ===
 
 # === return a KDE'd version of 'data' ===
 def get_kde_sample(data, n=1000, seed=1, show=False):
@@ -1193,8 +1210,8 @@ def get_kde_sample(data, n=1000, seed=1, show=False):
         plot(show=True)
     return data_resampled
 
-
-# === return x rounded to nfigs significant figures ===
+# === START round ===
+# return x rounded to nfigs significant figures
 def round(xin, nfigs=3, str_ret=False):
     x = np.array(xin) # convert to array in case of list input
     # Calculate the order of magnitude of x with special treatment if x=0
@@ -1240,8 +1257,9 @@ def round(xin, nfigs=3, str_ret=False):
         else:
             rounded_x_str = to_str(rounded_x)
         return rounded_x_str
+# === END round ===
 
-
+# === START round_with_error ===
 # round a value and its error (uncertainty) to given nfigs significant figures
 def round_with_error(val, val_err, nfigs=2):
     # prepare function for scalar or array input and copy into ret
@@ -1264,8 +1282,10 @@ def round_with_error(val, val_err, nfigs=2):
     # strip dimension if input was scalar and return
     if scalar_input: return np.squeeze(ret_val), np.squeeze(ret_val_err)
     return ret_val, ret_val_err
+# === END round_with_error ===
 
-# === return x in E-format ===
+# === START eform ===
+# return x in E-format
 def eform(x, prec=10, print_leading_plus=False):
     import decimal
     def eform_scalar(x):
@@ -1294,6 +1314,7 @@ def eform(x, prec=10, print_leading_plus=False):
     # strip dimension if input was scalar and return
     if scalar_input: return str(np.squeeze(ret))
     return ret
+# === END eform ===
 
 # escape latex
 def tex_escape(text):
@@ -1442,24 +1463,30 @@ def shock_jump_p(Mach, gamma=5.0/3.0):
 def shock_jump_T(Mach, gamma=5.0/3.0):
     return shock_jump_p(Mach,gamma) / shock_jump_rho(Mach,gamma)
 
-# === piecewise polytropic equation of state (polytropic EOS): pres = Konst*dens^Gamma ===
+# === START polytropic_eos ===
+# piecewise polytropic equation of state (polytropic EOS): pres = Konst*dens^Gamma
 def polytropic_eos(dens, mu=2.3):
     class ret:
-        # density and polytropic Gamma ranges (Masunaga & Inutsuka 2000)
-        dens_thresh = [0.0, 2.50e-16, 3.84e-13, 3.84e-8, 3.84e-3] # density threshold to define denisty regimes
-        Gamma = [1.0, 1.1, 1.4, 1.1, 5/3] # polytropic Gamma
-        Konst = [(0.2e5)**2] # polytropic constant
-        for i in range(1, 5):
-            Konst.append(Konst[i-1]*dens_thresh[i]**(Gamma[i-1]-Gamma[i]))
-        # loop through piecewise ranges to find the requested density regime
-        for i in range(5):
-            if dens >= dens_thresh[i]:
-                pres = Konst[i] * dens**Gamma[i] # pressure
-                cs = np.sqrt(Gamma[i]*pres/dens) # sound speed
-                temp = pres / (dens/mu/const.m_p) / const.k_b # temperature
-                break
-    return ret
+        def __init__(self, ):
+            # density and polytropic Gamma ranges (Masunaga & Inutsuka 2000)
+            self.dens = dens
+            self.mu = mu
+            self.dens_thresh = [0.0, 2.50e-16, 3.84e-13, 3.84e-8, 3.84e-3] # density threshold to define denisty regimes
+            self.Gamma = [1.0, 1.1, 1.4, 1.1, 5/3] # polytropic Gamma
+            self.Konst = [(0.2e5)**2] # polytropic constant
+            for i in range(1, 5):
+                self.Konst.append(self.Konst[i-1]*self.dens_thresh[i]**(self.Gamma[i-1]-self.Gamma[i]))
+            # loop through piecewise ranges to find the requested density regime
+            for i in range(5):
+                if self.dens >= self.dens_thresh[i]:
+                    self.pres = self.Konst[i] * self.dens**self.Gamma[i] # pressure
+                    self.cs = np.sqrt(self.Gamma[i]*self.pres/self.dens) # sound speed
+                    self.temp = self.pres / (self.dens/self.mu/const.m_p) / const.k_b # temperature
+                    break
+    return ret()
+# === END polytropic_eos ===
 
+# === START get_1d_coords ===
 # return cell-centered coordinates | . | . |
 #                               xmin       xmax
 # or face-centred if keyword cell_centred=False
@@ -1471,7 +1498,9 @@ def get_1d_coords(cmin=0, cmax=1, ndim=10, cell_centred=True):
         d = (cmax-cmin) / float(ndim-1)
         offset = 0.0
     return np.linspace(cmin+offset, cmax-offset, num=ndim)
+# === END get_1d_coords ===
 
+# === START get_2d_coords ===
 def get_2d_coords(cmin=[0,0], cmax=[1,1], ndim=[10,10], cell_centred=True):
     cmin = np.array(cmin)
     cmax = np.array(cmax)
@@ -1482,7 +1511,9 @@ def get_2d_coords(cmin=[0,0], cmax=[1,1], ndim=[10,10], cell_centred=True):
     c0 = get_1d_coords(cmin=cmin[0], cmax=cmax[0], ndim=ndim[0], cell_centred=cell_centred)
     c1 = get_1d_coords(cmin=cmin[1], cmax=cmax[1], ndim=ndim[1], cell_centred=cell_centred)
     return np.array(np.meshgrid(c0, c1, indexing='ij'))
+# === END get_2d_coords ===
 
+# === START get_3d_coords ===
 def get_3d_coords(cmin=[0,0,0], cmax=[1,1,1], ndim=[10,10,10], cell_centred=True):
     cmin = np.array(cmin)
     cmax = np.array(cmax)
@@ -1494,7 +1525,9 @@ def get_3d_coords(cmin=[0,0,0], cmax=[1,1,1], ndim=[10,10,10], cell_centred=True
     c1 = get_1d_coords(cmin=cmin[1], cmax=cmax[1], ndim=ndim[1], cell_centred=cell_centred)
     c2 = get_1d_coords(cmin=cmin[2], cmax=cmax[2], ndim=ndim[2], cell_centred=cell_centred)
     return np.array(np.meshgrid(c0, c1, c2, indexing='ij'))
+# === END get_3d_coords ===
 
+# === START get_coords ===
 # this function takes lists or arrays as inputs,
 # determining the dimensionality of the requested coordinates from the dimensionality of the inputs;
 # for example, if cmin=[0,0], cmin=[1,1], ndim=[10,10], this function returns 2D corrdinates with 10 points in x=y=[0,1]
@@ -1508,10 +1541,12 @@ def get_coords(cmin, cmax, ndim, cell_centred=True):
     if ndim.shape[0] == 1: return np.array(get_1d_coords(cmin[0], cmax[0], ndim[0], cell_centred))
     if ndim.shape[0] == 2: return np.array(get_2d_coords(cmin, cmax, ndim, cell_centred))
     if ndim.shape[0] == 3: return np.array(get_3d_coords(cmin, cmax, ndim, cell_centred))
+# === END get_coords ===
 
-# === Smoothing of n-dimensional array 'input_data' with Gaussian kernel. ===
-# === Kernel sigma or FWHM in pixel units (optionally provided per dimension). ===
-# === Support for NaN pixels in input_data. ===
+# START gauss_smooth ===
+# Smoothing of n-dimensional array 'input_data' with Gaussian kernel.
+# Kernel sigma or FWHM in pixel units (optionally provided per dimension).
+# Support for NaN pixels in input_data.
 def gauss_smooth(input_data, sigma=None, fwhm=None, mode='wrap', truncate=3.0, verbose=1):
     from scipy.ndimage import gaussian_filter, generic_filter
     # check inputs
@@ -1558,10 +1593,10 @@ def gauss_smooth(input_data, sigma=None, fwhm=None, mode='wrap', truncate=3.0, v
         gauss_weights = np.exp(-0.5*distance_squared_divided_by_sigma_squared)
         smoothed_data = generic_filter(input_data, nan_gaussian_filter, size=size, mode=mode, extra_arguments=(size, gauss_weights))
     return smoothed_data
+# END gauss_smooth ===
 
-
-
-# ================== similar to IDL rebin ====================
+# === START rebin ===
+# similar to IDL rebin
 def rebin(inarray, outshape):
     inshape = inarray.shape # get shape of input array
     dims = len(inshape) # get dimensionality
@@ -1583,8 +1618,10 @@ def rebin(inarray, outshape):
     for dim in range(dims):
         ret = ret.mean(axis=-dim-1) # average (compression) of relevant reshaped dimension
     return ret
+# === END rebin ===
 
-# ================== similar to IDL congrid ====================
+# === START congrid ===
+# similar to IDL congrid
 def congrid(inarray, outshape, method="linear"):
     from scipy.interpolate import RegularGridInterpolator
     inshape = inarray.shape # get shape of input array
@@ -1612,7 +1649,7 @@ def congrid(inarray, outshape, method="linear"):
     coords_nd = get_coords(cmin=[0.0]*dims, cmax=[1.0]*dims, ndim=outshape, cell_centred=True)
     ret = f(coords_nd.T).T # evaluate f at output coordindates
     return ret
-
+# === END congrid ===
 
 # ===== the following applies in case we are running this in script mode =====
 if __name__ == "__main__":
