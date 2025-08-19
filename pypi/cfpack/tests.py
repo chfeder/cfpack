@@ -60,6 +60,30 @@ def test_plot_map(N=500):
     stop()
 
 
+# === test for cfpack.plot_map ===
+def plot_multi_panel():
+    o1 = cfp.plot(x=[1,2,3], y=[1,2,3], label="1st")
+    o1 = cfp.plot(x=[1,2,3], y=[3,2,1], label="2nd", xlabel="", ylabel="y top", save="tmp1.pdf")
+    cfp.plot_multi_panel(o1.ax(), save="tmp1_mp.pdf")
+
+    o2 = cfp.plot(x=[1,2,3], y=[2,2,2], label="3rd", xlabel="", ylabel="", save="tmp2.pdf")
+
+    figure_axes = [o1.ax(), o2.ax()]
+    cfp.plot_multi_panel(figure_axes, show=False, save="tmp_mp.pdf")
+
+    exit()
+
+    o3 = cfp.plot(x=[1,2,3], y=[300,200,100], label="4th", xlabel="x bottom left", ylabel="y bottom", save="tmp3.pdf")
+
+    o4 = cfp.plot(x=[1,2,3], y=[3,2,1], label="5th", xlabel="x bottom right", ylabel="", save="tmp4.pdf", show=False)
+    o4 = cfp.plot(x=[1,2,3], y=[3,2,1], label="5th", xlabel="x bottom right", ylabel="", save="tmp4.png")
+    cfp.plot_multi_panel(o4.ax(), save="tmp4_mp.pdf")
+    cfp.plot_multi_panel(o4.ax(), save="tmp4_mp.png")
+
+    figure_axes = [o1.ax(), o2.ax(), o3.ax(), o4.ax()]
+    cfp.plot_multi_panel(figure_axes, show=False, save="tmp_mp.pdf")
+    stop()
+
 # === test for cfpack.get_spectrum ===
 def test_get_spectrum():
     # Tukey window function
@@ -100,6 +124,8 @@ if __name__ == "__main__":
     # sub parser for 'plot_map' sub-command
     parser_plot_map = subparsers.add_parser('plot_map')
     parser_plot_map.add_argument("-N", type=int, help="number of cells N to create an N x N test map (default: %(default)s)", default=256)
+    # sub parser for 'plot_multi_panel' sub-command
+    parser_plot_multi_panel = subparsers.add_parser('plot_multi_panel')
     # sub parser for 'get_spectrum' sub-command
     parser_fit = subparsers.add_parser('get_spectrum')
 
@@ -110,6 +136,9 @@ if __name__ == "__main__":
 
     if args.subcommand == 'plot_map':
         test_plot_map(N=args.N)
+
+    if args.subcommand == 'plot_multi_panel':
+        plot_multi_panel()
 
     if args.subcommand == 'get_spectrum':
         test_get_spectrum()
