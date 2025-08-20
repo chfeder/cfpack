@@ -1,3 +1,7 @@
+pypi_*
 pypi/dist/
+pypi/cfpack.egg-info/
+pypi/setup.py.new
+pypi/setup.py.old
 pypi/pyproject.toml.new
 pypi/pyproject.toml.old
