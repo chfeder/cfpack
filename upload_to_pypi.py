@@ -85,3 +85,7 @@ if __name__ == "__main__":
     input("\nIf upload was successful, press enter to finalise update\n")
     cmd = "cp "+path+pyproject_file+".new "+path+pyproject_file
     run_shell_command(cmd)
+
+    # update git
+    run_shell_command("git commit -m 'cfpack version "+new_version+"' pypi/setup.py")
+    run_shell_command("git push")
