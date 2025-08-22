@@ -826,8 +826,8 @@ class monitor:
         return reported
 
 # === executes a shell command: input string 'cmd'
-def run_shell_command(cmd, quiet=False, print_only=False, capture=False, **kargs):
-    from subprocess import run
+def run_shell_command(cmd, quiet=False, print_only=False, capture=False, combine_output=True, **kargs):
+    from subprocess import run, PIPE, STDOUT
     from os import environ
     from sys import modules
     if 'mpi4py.MPI' in modules:
@@ -838,7 +838,11 @@ def run_shell_command(cmd, quiet=False, print_only=False, capture=False, **kargs
             kargs['color'] = 'magenta' # set default colour for shell command print
         print(cmd, **kargs)
     if (not print_only):
-        sp_result = run(cmd, capture_output=capture, text=True, shell=True, env=environ.copy())
+        if combine_output:
+            stdout = PIPE; stderr = STDOUT
+        if not combine_output or capture:
+            stdout = None; stderr = None
+        sp_result = run(cmd, capture_output=capture, stdout=stdout, stderr=stderr, text=True, shell=True, env=environ.copy())
         return sp_result
 
 # === START check_for_overwrite ===
