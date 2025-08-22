@@ -826,7 +826,7 @@ class monitor:
         return reported
 
 # === executes a shell command: input string 'cmd'
-def run_shell_command(cmd, quiet=False, print_only=False, capture=False, combine_output=True, **kargs):
+def run_shell_command(cmd, quiet=False, print_only=False, capture=False, combine_output=False, **kargs):
     from subprocess import run, PIPE, STDOUT
     from os import environ
     from sys import modules
