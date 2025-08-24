@@ -19,10 +19,10 @@ else:
     nPE  = 1
     myPE = 0
 
-# ===== the following applies in case we are running this in script mode =====
-if __name__ == "__main__":
+# === main ===
+def main():
 
-    from cfpack.defaults import *
+    from cfpack import print, stop
     import cfpack as cfp
     import argparse
     import numpy as np
@@ -68,3 +68,7 @@ if __name__ == "__main__":
 
     # let the timer report
     timer.report()
+
+# ===== the following applies in case we are running this in script mode =====
+if __name__ == "__main__":
+    main()
