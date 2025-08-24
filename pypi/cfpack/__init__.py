@@ -830,9 +830,13 @@ def run_shell_command(cmd, quiet=False, print_only=False, capture=False, combine
     from subprocess import run, PIPE, STDOUT
     from os import environ
     from sys import modules
+    env = environ.copy()
     if 'mpi4py.MPI' in modules:
         if cmd.startswith(("mpirun", "mpiexec", "srun")):
             print('Calling an external MPI program may fail because mpi4py might interfere.', warn=True)
+            for ev in list(env): # remove some MPI env vars, so the child MPI job will launch
+                if ev.startswith(("OMPI_", "PMI_", "PMIX_", "HYDRA_")):
+                    env.pop(ev)
     if (not quiet) or print_only:
         if 'color' not in kargs.keys():
             kargs['color'] = 'magenta' # set default colour for shell command print
@@ -842,7 +846,7 @@ def run_shell_command(cmd, quiet=False, print_only=False, capture=False, combine
             stdout = PIPE; stderr = STDOUT
         if not combine_output or capture:
             stdout = None; stderr = None
-        sp_result = run(cmd, capture_output=capture, stdout=stdout, stderr=stderr, text=True, shell=True, env=environ.copy())
+        sp_result = run(cmd, capture_output=capture, stdout=stdout, stderr=stderr, text=True, shell=True, env=env)
         return sp_result
 
 # === START check_for_overwrite ===
