@@ -1011,7 +1011,7 @@ def get_moments(x, pdf=None, xs=None, xe=None):
 # === START get_pdf ===
 # get the PDF of data and return centred bin values
 def get_pdf(data, range=None, bins=200):
-    pdf, bin_edges = np.histogram(data, range=None, density=True, bins=bins)
+    pdf, bin_edges = np.histogram(data, range=range, density=True, bins=bins)
     bin_centres = ( bin_edges[1:] + bin_edges[:-1] ) / 2.0
     class ret:
         def __init__(self, pdf_, bin_edges_, bin_centres_):
