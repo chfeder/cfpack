@@ -31,6 +31,9 @@ def main():
     parser = argparse.ArgumentParser(description='MPI (mpi4py) demo.')
     args = parser.parse_args()
 
+    if not MPI:
+        print("mpi4py does not appear to be installed.", error=True)
+
     # start a new timer
     timer = cfp.timer('mpi4py test')
 
