@@ -181,14 +181,14 @@ def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel='x', ylabel='y'
                 ax.fill_between(x, y-np.abs(yerr[0]), y+np.abs(yerr[1]), color=color_err, alpha=alpha_err, linewidth=0.0, label=label)
         # create a stand-alone legend item for more control
         if legend_formatter is not None:
+            from . import legend_formatter as cfpack_legend_formatter
             handles, labels = ax.get_legend_handles_labels()
             last_handle, last_label = handles[-1], labels[-1]
-            if builtins.type(legend_formatter) != builtins.type(legend_formatter):
+            if not isinstance(legend_formatter, cfpack_legend_formatter):
                 print('legend_formatter must be of type cfpack.legend_formatter', error=True)
             # add the new legend
-            leg = ax.legend(
-                handles=[last_handle], # select only the last plotted item
-                labels=[last_label], # label
+            leg = Legend(
+                ax, [last_handle], [last_label],
                 bbox_to_anchor=legend_formatter.pos, # custom placement (normalised coordinates)
                 loc=legend_formatter.loc, # relative position
                 handletextpad=legend_formatter.textpad,
