@@ -127,7 +127,6 @@ def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel='x', ylabel='y'
          aspect_data=None, aspect_box=None, normalised_coords=False, bar_width=1.0,
          xlog=False, ylog=False, xlim=None, ylim=None, legend_loc='upper left', legend_formatter=None,
          axes_format=[None,None], axes_pos=None, ax=None, show=False, pause=None, save=None, *args, **kwargs):
-    import builtins
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
     from matplotlib.legend import Legend
