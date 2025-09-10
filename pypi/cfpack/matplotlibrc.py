@@ -8,6 +8,7 @@ rcParams['text.latex.preamble'] = r'\usepackage{bm}'
 # basics
 rcParams['lines.linewidth'] = 1.2
 rcParams['lines.markersize'] = 2
+rcParams['lines.markeredgewidth'] = 0.5
 rcParams['font.family'] = 'Arial'
 rcParams['font.size'] = 12
 rcParams['axes.linewidth'] = 0.8
