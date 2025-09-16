@@ -5,8 +5,7 @@
 import numpy as np
 import argparse
 import cfpack as cfp
-from cfpack.defaults import *
-
+from cfpack import print, stop
 
 # === test for cfpack.fit ===
 def test_fit(n=21):
@@ -128,8 +127,9 @@ if __name__ == "__main__":
     parser_plot_multi_panel = subparsers.add_parser('plot_multi_panel')
     # sub parser for 'get_spectrum' sub-command
     parser_fit = subparsers.add_parser('get_spectrum')
-
     args = parser.parse_args()
+
+    cfp.load_plot_style()
 
     if args.subcommand == 'fit':
         test_fit()
