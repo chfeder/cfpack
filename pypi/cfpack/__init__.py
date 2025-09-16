@@ -13,13 +13,56 @@ try:
 except:
     from pdb import set_trace as stop # python debugger
 
-# === setup default cfpack plot styles ===
-def import_matplotlibrc(fontscale=None):
-    from . import matplotlibrc # set default plotting style
+# === functions and containers used to set cfpack plotting style ===
+__CFPACK_STYLE_CTX = None  # holds the rc_context manager
+__CFPACK_STYLE_EXIT = None  # holds the exit function
+
+# load cfpack matplotlib style, saving current rcParams so they can be restored later
+def load_plot_style(*extra, fontsize=None, fontscale=None, figsize=None, figscale=None):
+    import os
+    from matplotlib import rc_context as mpl_rc_context
+    from importlib.resources import files
+    from matplotlib.style import use as mpl_style_use
+    from matplotlib import rcParams
+    global __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT
+    if __CFPACK_STYLE_CTX is None:
+        __CFPACK_STYLE_CTX = mpl_rc_context() # snapshot current rcParams
+        __CFPACK_STYLE_EXIT = __CFPACK_STYLE_CTX.__enter__() # enter the context manually
+        # apply cfpack style
+        style_files = ["cfpack.mplstyle", files("cfpack").joinpath("cfpack.mplstyle")]
+        for style_file in style_files:
+            if os.path.exists(style_file):
+                mpl_style_use([str(style_file), *extra])
+                continue
+    # set fontsize if requested
+    if fontsize is not None:
+        rcParams['font.size'] = fontsize
+        rcParams['legend.fontsize'] = fontsize
+    # scale fontsize if requested
     if fontscale is not None:
-        from matplotlib import rcParams
         rcParams['font.size'] *= fontscale
         rcParams['legend.fontsize'] *= fontscale
+    # set figsize if requested
+    if figsize is not None:
+        if not isinstance(figsize, (list, tuple, np.ndarray)):
+            print("figsize must have two elements (x,y)", warn=True)
+        else:
+            rcParams['figure.figsize'] = (figsize[0], figsize[1])
+    # set figscale if requested
+    if figscale is not None:
+        if not isinstance(figscale, (list, tuple, np.ndarray)):
+            print("figsizescale must have two elements (x,y)", warn=True)
+        else:
+            rcParams['figure.figsize'] = np.array(rcParams['figure.figsize']) \
+                                            * np.array([figscale[0], figscale[1]])
+
+# restore rcParams that were active before load_plot_style()
+def unload_plot_style():
+    global __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT
+    if __CFPACK_STYLE_CTX is None:
+        return  # nothing to restore
+    __CFPACK_STYLE_CTX.__exit__(None, None, None)  # restore snapshot
+    __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT = None, None
 
 # === START get_frame ===
 # returns an object with the file and function name from which it is called
