@@ -59,10 +59,9 @@ def load_plot_style(*extra, fontsize=None, fontscale=None, figsize=None, figscal
 # restore rcParams that were active before load_plot_style()
 def unload_plot_style():
     global __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT
-    if __CFPACK_STYLE_CTX is None:
-        return  # nothing to restore
-    __CFPACK_STYLE_CTX.__exit__(None, None, None)  # restore snapshot
-    __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT = None, None
+    if __CFPACK_STYLE_CTX is not None:
+        __CFPACK_STYLE_CTX.__exit__(None, None, None)  # restore snapshot
+        __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT = None, None
 
 # === START get_frame ===
 # returns an object with the file and function name from which it is called
