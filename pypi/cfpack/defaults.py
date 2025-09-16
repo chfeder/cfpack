@@ -3,5 +3,5 @@ from . import stop # simple 'stop()' in any script to drop into python debugger 
 # forward physical constants for quick access to enable interactive calculations (speed_of_light, pc, m_sol, etc.)
 from .constants import *
 # load default matplotlib styles
-from . import load_plot_style()
+from . import load_plot_style
 load_plot_style()
