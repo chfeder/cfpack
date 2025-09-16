@@ -1,5 +1,36 @@
 # === set default plotting style ===
 
+__CFPACK_STYLE_CTX = None  # holds the rc_context manager
+__CFPACK_STYLE_EXIT = None  # holds the exit function
+
+# load cfpack matplotlib style, saving current rcParams so they can be restored later
+def load_style(*extra):
+    import os
+    from matplotlib import rc_context as mpl_rc_context
+    from importlib.resources import files
+    from matplotlib.style import use as mpl_style_use
+    global __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT
+    if __CFPACK_STYLE_CTX is not None:
+        return  # already loaded
+    __CFPACK_STYLE_CTX = mpl_rc_context() # snapshot current rcParams
+    __CFPACK_STYLE_EXIT = __CFPACK_STYLE_CTX.__enter__() # enter the context manually
+    # apply cfpack style
+    style_files = ["cfpack.mplstyle", files("cfpack").joinpath("cfpack.mplstyle")]
+    for style_file in style_files:
+        if os.path.exists(style_file):
+            mpl_style_use([str(style_file), *extra])
+            continue
+
+# restore rcParams that were active before load_style()
+def unload_style():
+    global __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT
+    if __CFPACK_STYLE_CTX is None:
+        return  # nothing to restore
+    __CFPACK_STYLE_CTX.__exit__(None, None, None)  # restore snapshot
+    __CFPACK_STYLE_CTX, __CFPACK_STYLE_EXIT = None, None
+
+# load_style()
+
 from matplotlib import rcParams
 
 # latex
