@@ -62,7 +62,7 @@ def print(*args, error=False, warn=False, highlight=False, color="",
     # handle MPI printing cases
     from sys import modules
     if 'mpi4py.MPI' in modules:
-        from mpi import myPE
+        from . mpi import myPE
     else:
         myPE = 0
     if mpi is None:
