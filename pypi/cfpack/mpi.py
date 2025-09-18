@@ -19,59 +19,87 @@ else:
     nPE  = 1
     myPE = 0
 
-# === main ===
-def main():
 
+# mpi4pi demo test
+def mpi4py_test():
+
+    import argparse
     from cfpack import print, stop
     import cfpack as cfp
-    import argparse
-    import numpy as np
-
-    # parse script arguments
-    parser = argparse.ArgumentParser(description='MPI (mpi4py) demo.')
-    args = parser.parse_args()
 
     if not MPI:
         print("mpi4py does not appear to be installed.", error=True)
 
-    # start a new timer
-    timer = cfp.timer('mpi4py test')
+    # parse script arguments
+    parser = argparse.ArgumentParser(description='Python MPI (mpi4py) demo.')
+    parser.add_argument("-t", "--type", choices=["sum", "send-recv"], default="sum",
+                        help='Select MPI demo type.')
+    parser.add_argument("-n", "--numbers", type=float, default=1e8,
+                        help='Max integer to sum up to [0...n]')
+    args = parser.parse_args()
 
-    # print MPI info
+    # get MPI ranks
+    comm = MPI.COMM_WORLD
+    nPE = comm.Get_size()
+    myPE = comm.Get_rank()
     print("Total number of MPI ranks = "+str(nPE))
     comm.Barrier()
 
-    # define n and local, global arrays
-    n = int(1e7)
-    sum_local = np.array(0.0)
-    sum_global = np.array(0.0)
+    # === MPI summation (allreduce) demo
+    if args.type == 'sum':
 
-    # === domain decomposition ===
-    mod = n % nPE
-    div = n // nPE
-    if mod != 0: # Why do this? ...
-        div += 1
-    print("domain decomposition mod, div = "+str(mod)+", "+str(div))
-    my_start =  myPE    * div     # loop start index
-    my_end   = (myPE+1) * div - 1 # loop end index
-    # last PE gets the rest
-    if (myPE == nPE-1): my_end = n
-    print("my_start = "+str(my_start)+", my_end = "+str(my_end), mpi=True)
+        # define n and local, global arrays
+        n = int(args.numbers)
 
-    # loop over local chunk of loop
-    for i in range(my_start, my_end+1):
-        sum_local += i
+        # start a new timer
+        timer = cfp.timer('mpi4py test')
 
-    print("sum_local = "+str(sum_local), mpi=True)
-    comm.Barrier()
+        # === domain decomposition ===
+        mod = n % nPE
+        div = n // nPE
+        if mod != 0: # Why do this? ...
+            div += 1
+        print("domain decomposition mod, div = "+str(mod)+", "+str(div))
+        my_start =  myPE    * div     # loop start index
+        my_end   = (myPE+1) * div - 1 # loop end index
+        # last PE gets the rest
+        if (myPE == nPE-1): my_end = n
+        print("my_start = "+str(my_start)+", my_end = "+str(my_end), mpi=myPE)
 
-    # MPI collective communication (all reduce)
-    comm.Allreduce(sum_local, sum_global, op=MPI.SUM)
-    print("sum_global = "+str(sum_global))
+        # loop over local chunk of loop to accumulate into sum_local
+        sum_local = 0.0
+        for i in range(my_start, my_end+1):
+            sum_local += i
 
-    # let the timer report
-    timer.report()
+        print("sum_local = "+str(sum_local), mpi=myPE)
+
+        sum_global = comm.allreduce(sum_local, op=MPI.SUM)
+
+        comm.Barrier()
+
+        print("sum_global = "+str(sum_global))
+
+        # let the timer report
+        timer.report()
+
+
+    # === MPI send-receive demo
+    if args.type == 'send-recv':
+        if nPE != 2:
+            print("Send-receive demo only works with exactly 2 MPI cores.")
+            exit(0)
+        if myPE == 1:
+            # rank 1 sends integer 66
+            message = 66
+            comm.send(message, dest=0, tag=0)
+            print("Message sent: ", message, color='lightred_ex', mpi=myPE)
+        if myPE == 0:
+            # rank 0 receives
+            value = comm.recv(source=1, tag=0)
+            print("Message received: ", value, color='green', mpi=myPE)
+    return
+
 
 # ===== the following applies in case we are running this in script mode =====
 if __name__ == "__main__":
-    main()
+    mpi4py_test()
