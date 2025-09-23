@@ -1,5 +1,5 @@
 text.usetex : True
-text.latex.preamble : \usepackage{bm}
+text.latex.preamble : \usepackage{bm} \usepackage{amssymb}
 figure.figsize : 5.5, 3.5
 figure.dpi : 150
 savefig.dpi : 200
