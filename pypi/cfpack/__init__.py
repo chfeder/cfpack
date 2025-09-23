@@ -343,11 +343,18 @@ def plot_map(image=None, xedges=None, yedges=None, dims=None, vmin=None, vmax=No
                                 origin='lower', interpolation='none', *args, **kwargs)
         # add colorbar
         if colorbar:
+            cbar_fmt = {"pos": "right", "offset_pos": "left"} # default position: right
+            if isinstance(colorbar, str):
+                if colorbar == "right": pass
+                if colorbar == "left":
+                    cbar_fmt = {"pos": "left", "offset_pos": "right"}
             divider = make_axes_locatable(ax)
-            cax = divider.append_axes("right", size="5%", pad=0.05)
+            cax = divider.append_axes(cbar_fmt["pos"], size="5%", pad=0.05)
             cb = plt.colorbar(map_obj, cax=cax, label=cmap_label, pad=0.01, aspect=25)
             if not log: cb.ax.minorticks_on()
-            cb.ax.yaxis.set_offset_position('left')
+            cb.ax.yaxis.set_ticks_position(cbar_fmt["pos"])
+            cb.ax.yaxis.set_label_position(cbar_fmt["pos"])
+            cb.ax.yaxis.set_offset_position(cbar_fmt["offset_pos"])
         if aspect_data != "auto": ax.set_aspect(aspect_data)
         if aspect_box is not None: ax.set_box_aspect(aspect_box)
         if axes_pos is not None: ax.set_position(axes_pos)
@@ -521,9 +528,9 @@ def rgba2data(rgba_image, cmap_name, cmap_vmin, cmap_vmax):
 # - Method for parameter error estimate (based on random sampling with n_random_draws=1000):
 #     perr_method='statistical': statistical error estimate based on sampling from data errors provided (xerr and/or yerr)
 #     perr_method='systematic' : systematic error estimate based on sampling dat_frac_for_systematic_perr=0.3 of the original data
-def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_random_draws=1000, dat_frac_for_systematic_perr=0.3,
-        weights=None, scale_covar=True, params=None, fit_method='ls', plot_fit=False, mcmc_walkers=32, mcmc_steps=2000,
-        verbose=1, *args, **kwargs):
+def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_random_draws=1000, random_seed=140281,
+        dat_frac_for_systematic_perr=0.3, weights=None, scale_covar=True, params=None, fit_method='ls',
+        plot_fit=False, mcmc_walkers=32, mcmc_steps=2000, verbose=1, *args, **kwargs):
     if fit_method not in ['ls', 'mcmc']: print("fit_method = '"+fit_method+"' not supported.", error=True)
     from lmfit import Model
     model = Model(func) # get lmfit model object
@@ -633,9 +640,9 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                 print("Performing statistical error estimate with "+str(n_random_draws)+" sampling fits, based on data errors provided...", highlight=True)
                 # draw from Gaussian random distribution
                 if xerr is not None:
-                    xtry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=xdat[i], sigma=xerr[i], seed=None) for i in range(len(xdat))])
+                    xtry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=xdat[i], sigma=xerr[i], seed=random_seed+0) for i in range(len(xdat))])
                 if yerr is not None:
-                    ytry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=ydat[i], sigma=yerr[i], seed=None) for i in range(len(ydat))])
+                    ytry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=ydat[i], sigma=yerr[i], seed=random_seed+1) for i in range(len(ydat))])
                 # for each random sample, fit and record the best-fit parameter(s) in popts
                 for i in range(n_random_draws):
                     if xerr is not None:
