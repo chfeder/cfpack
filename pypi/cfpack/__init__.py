@@ -640,9 +640,13 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                 print("Performing statistical error estimate with "+str(n_random_draws)+" sampling fits, based on data errors provided...", highlight=True)
                 # draw from Gaussian random distribution
                 if xerr is not None:
-                    xtry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=xdat[i], sigma=xerr[i], seed=random_seed+0) for i in range(len(xdat))])
+                    if random_seed is None: rand_seed = None
+                    else: rand_seed = int(random_seed)
+                    xtry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=xdat[i], sigma=xerr[i], seed=rand_seed) for i in range(len(xdat))])
                 if yerr is not None:
-                    ytry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=ydat[i], sigma=yerr[i], seed=random_seed+1) for i in range(len(ydat))])
+                    if random_seed is None: rand_seed = None
+                    else: rand_seed = int(random_seed) + 4711
+                    ytry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=ydat[i], sigma=yerr[i], seed=rand_seed) for i in range(len(ydat))])
                 # for each random sample, fit and record the best-fit parameter(s) in popts
                 for i in range(n_random_draws):
                     if xerr is not None:
