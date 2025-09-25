@@ -674,7 +674,7 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                     x = np.copy(xdat) # copy original x data
                     y = np.copy(ydat) # copy original y data
                     for i in range(n_dat_toss): # now randomly remove indices
-                        seed(None) # set the random seed; if None, random uses the system time
+                        seed(random_seed+i) # set the random seed; if None, random uses the system time
                         ind = randrange(len(x))
                         x = np.delete(x, ind)
                         y = np.delete(y, ind)
