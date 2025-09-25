@@ -28,7 +28,7 @@ def test_fit(n=21):
     # linear func 2
     print("=== Fit (linear func with y errors):", color="magenta")
     ydat = func2(xdat, 0.5, 1.5)
-    yerr = ydat*0 + 0.5 + cfp.generate_random_gaussian_numbers(n=n, mu=0, sigma=0.05, seed=None)
+    yerr = ydat*0 + 0.5 + cfp.generate_random_gaussian_numbers(n=n, mean=0, sigma=0.05, seed=None)
     fitres_w = cfp.fit(func2, xdat, ydat, weights=1/yerr, scale_covar=False)
     fitres_e = cfp.fit(func2, xdat, ydat, yerr=yerr)
     cfp.plot(ydat, xdat, yerr=[yerr,yerr], linestyle=None, marker='o', label="data with y errors")
@@ -36,7 +36,7 @@ def test_fit(n=21):
     cfp.plot(func2(xdat, *fitres_e.popt), xdat, label="fit with y errors")
     print("=== Fit (linear func with x errors):", color="magenta")
     ydat = func2(xdat, 0.5, 3.0)
-    xerr = xdat*0 + 1.0 + cfp.generate_random_gaussian_numbers(n=n, mu=0, sigma=0.1, seed=None)
+    xerr = xdat*0 + 1.0 + cfp.generate_random_gaussian_numbers(n=n, mean=0, sigma=0.1, seed=None)
     cfp.plot(ydat, xdat, xerr=[xerr,xerr], linestyle=None, marker='o', label="data with x errors")
     fitres_e = cfp.fit(func2, xdat, ydat, xerr=xerr)
     cfp.plot(func2(xdat, *fitres_e.popt), xdat, label="fit with x errors")
