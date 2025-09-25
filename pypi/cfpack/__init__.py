@@ -642,11 +642,11 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                 if xerr is not None:
                     if random_seed is None: rand_seed = None
                     else: rand_seed = int(random_seed)
-                    xtry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=xdat[i], sigma=xerr[i], seed=rand_seed) for i in range(len(xdat))])
+                    xtry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mean=xdat[i], sigma=xerr[i], seed=rand_seed+i) for i in range(len(xdat))])
                 if yerr is not None:
                     if random_seed is None: rand_seed = None
-                    else: rand_seed = int(random_seed) + 4711
-                    ytry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mu=ydat[i], sigma=yerr[i], seed=rand_seed) for i in range(len(ydat))])
+                    else: rand_seed = int(random_seed) + n_random_draws
+                    ytry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mean=ydat[i], sigma=yerr[i], seed=rand_seed+i) for i in range(len(ydat))])
                 # for each random sample, fit and record the best-fit parameter(s) in popts
                 for i in range(n_random_draws):
                     if xerr is not None:
@@ -993,17 +993,15 @@ def add_line_to_file(filename, add_line, position="end", debug=True):
 
 # generates a numpy array with n uniformly distributed random numbers based on min and max
 def generate_random_uniform_numbers(n=100, min=0.0, max=1.0, seed=None):
-    from random import seed as random_seed, uniform as random_uniform
-    random_seed(seed) # set the random seed; if None, random uses the system time
-    random_numbers = [random_uniform(min, max) for _ in range(n)]
-    return np.array(random_numbers)
+    gen = np.random.default_rng(seed)
+    random_numbers = gen.uniform(low=min, high=max, size=n)
+    return random_numbers
 
 # generates a numpy array with n Gaussian distributed random numbers based on mean mu and standard devitation sigma
-def generate_random_gaussian_numbers(n=100, mu=0.0, sigma=1.0, seed=None):
-    from random import seed as random_seed, gauss as random_gauss
-    random_seed(seed) # set the random seed; if None, random uses the system time
-    random_numbers = [random_gauss(mu, sigma) for _ in range(n)]
-    return np.array(random_numbers)
+def generate_random_gaussian_numbers(n=100, mean=0.0, sigma=1.0, seed=None):
+    gen = np.random.default_rng(seed)
+    random_numbers = gen.normal(loc=mean, scale=sigma, size=n)
+    return random_numbers
 
 # === return mean, stddev, skewness, kurtosis of input time series f(t) by integrating over t ===
 def get_moments_from_time_series(time, func, ts=None, te=None):
