@@ -19,6 +19,7 @@ __CFPACK_STYLE_EXIT = None  # holds the exit function
 
 # load cfpack matplotlib style, saving current rcParams so they can be restored later
 def load_plot_style(*extra, fontsize=None, fontscale=None, figsize=None, figscale=None):
+    import atexit; atexit.register(unload_plot_style) # ensure clean shutdown even if user forgets
     import os
     from matplotlib import rc_context as mpl_rc_context
     from importlib.resources import files
@@ -640,23 +641,25 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                 print("Performing statistical error estimate with "+str(n_random_draws)+" sampling fits, based on data errors provided...", highlight=True)
                 # draw from Gaussian random distribution
                 if xerr is not None:
-                    if random_seed is None: rand_seed = None
-                    else: rand_seed = int(random_seed)
-                    xtry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mean=xdat[i], sigma=xerr[i], seed=rand_seed+i) for i in range(len(xdat))])
+                    if random_seed is None: rand_seed = [None]*len(xdat)
+                    else: rand_seed = np.arange(len(xdat)) + int(random_seed)
+                    xtry = []
+                    for i in range(len(xdat)):
+                        xtry.append(generate_random_gaussian_numbers(n=n_random_draws, mean=xdat[i], sigma=xerr[i], seed=rand_seed[i]))
+                    xtry = np.array(xtry)
                 if yerr is not None:
-                    if random_seed is None: rand_seed = None
-                    else: rand_seed = int(random_seed) + n_random_draws
-                    ytry = np.array([generate_random_gaussian_numbers(n=n_random_draws, mean=ydat[i], sigma=yerr[i], seed=rand_seed+i) for i in range(len(ydat))])
+                    if random_seed is None: rand_seed = [None]*len(ydat)
+                    else: rand_seed = np.arange(len(ydat)) + int(random_seed) + n_random_draws
+                    ytry = []
+                    for i in range(len(ydat)):
+                        ytry.append(generate_random_gaussian_numbers(n=n_random_draws, mean=ydat[i], sigma=yerr[i], seed=rand_seed[i]))
+                    ytry = np.array(ytry)
                 # for each random sample, fit and record the best-fit parameter(s) in popts
                 for i in range(n_random_draws):
-                    if xerr is not None:
-                        x = xtry[:,i]
-                    else:
-                        x = xdat
-                    if yerr is not None:
-                        y = ytry[:,i]
-                    else:
-                        y = ydat
+                    if xerr is not None: x = xtry[:,i]
+                    else: x = xdat
+                    if yerr is not None: y = ytry[:,i]
+                    else: y = ydat
                     independent_vars_dict = {model.independent_vars[0]:x} # set independent variable
                     fit_result = model.fit(data=y, params=lmfit_params, weights=None, *args, **kwargs, **independent_vars_dict)
                     popt = []
@@ -664,22 +667,17 @@ def fit(func, xdat, ydat, xerr=None, yerr=None, perr_method='statistical', n_ran
                         popt.append(fit_result.params[pname].value)
                     popts.append(popt)
             if perr_method == "systematic":
-                from random import seed, randrange
                 n_dat_frac = max([n_free_params+1, int(np.ceil(max([0,min([dat_frac_for_systematic_perr,1])])*len(xdat)))]) # take only a fraction of the original data size (minimally, the number of parameters + 1)
-                n_dat_toss = len(xdat) - n_dat_frac # number of data elements to drop
                 print("Performing systematic error estimate with "+str(n_random_draws)+" sampling fits, based on random subsets of "+str(n_dat_frac/len(xdat)*100)+
                     "% of the original data, which are "+str(n_dat_frac)+" of total "+str(len(xdat))+" datapoints (note that minimum number of datapoints is the number of free parameters + 1 = "+
                     str(n_free_params+1)+").", highlight=True)
+                if random_seed is None: rand_seed = [None]*n_random_draws
+                else: rand_seed = np.arange(n_random_draws) + int(random_seed)
                 for i in range(n_random_draws):
-                    x = np.copy(xdat) # copy original x data
-                    y = np.copy(ydat) # copy original y data
-                    for i in range(n_dat_toss): # now randomly remove indices
-                        seed(random_seed+i) # set the random seed; if None, random uses the system time
-                        ind = randrange(len(x))
-                        x = np.delete(x, ind)
-                        y = np.delete(y, ind)
-                    independent_vars_dict = {model.independent_vars[0]:x} # set independent variable
-                    fit_result = model.fit(data=y, params=lmfit_params, weights=None, *args, **kwargs, **independent_vars_dict)
+                    gen = np.random.default_rng(rand_seed[i]) # set the random seed; if None, use system time
+                    rand_inds = gen.integers(0, len(xdat), size=n_dat_frac) # get random indices of length n_dat_frac to use for fitting
+                    independent_vars_dict = {model.independent_vars[0]:xdat[rand_inds]} # set independent variable
+                    fit_result = model.fit(data=ydat[rand_inds], params=lmfit_params, weights=None, *args, **kwargs, **independent_vars_dict)
                     popt = []
                     for pname in fit_result.params:
                         popt.append(fit_result.params[pname].value)
