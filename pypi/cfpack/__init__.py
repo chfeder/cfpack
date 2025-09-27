@@ -156,12 +156,21 @@ def print(*args, error=False, warn=False, highlight=False, color="",
 # For each plot item (line, symbol, etc) that requires a custom legend,
 # initialise new lf = cfp.legend_formatter(pos=(x,y), ...) and pass into cfp.plot(legend_formatter=lf)
 class legend_formatter:
-    def __init__(self, pos=(0.5, 0.5), loc='center left', textpad=0.1, length=1.25, fontsize=None):
-        self.pos = pos # custom placement (normalised coordinates)
-        self.loc = loc # relative position
-        self.textpad = textpad # pad between symbol/line and text label
-        self.length = length # length of the symbol/line section
-        self.fontsize = fontsize
+    def __init__(self):
+        self.pos = [] # custom placement (normalised coordinates)
+        self.loc = [] # relative position
+        self.textpad = [] # pad between symbol/line and text label
+        self.length = [] # length of the symbol/line section
+        self.fontsize = [] # fontsize
+    # add new legend item
+    def add(self, pos=(0.5, 0.5), loc='center left', textpad=0.1, length=1.25, fontsize=None):
+        self.pos.append(pos)
+        self.loc.append(loc)
+        self.textpad.append(textpad)
+        self.length.append(length)
+        self.fontsize.append(fontsize)
+        return self
+
 # === END legend_formatter ===
 
 # === START plot ===
@@ -231,11 +240,11 @@ def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel='x', ylabel='y'
             # add the new legend
             leg = Legend(
                 ax, [last_handle], [last_label],
-                bbox_to_anchor=legend_formatter.pos, # custom placement (normalised coordinates)
-                loc=legend_formatter.loc, # relative position
-                handletextpad=legend_formatter.textpad,
-                handlelength=legend_formatter.length,
-                fontsize=legend_formatter.fontsize,
+                bbox_to_anchor=legend_formatter.pos[-1], # custom placement (normalised coordinates)
+                loc=legend_formatter.loc[-1], # relative position
+                handletextpad=legend_formatter.textpad[-1],
+                handlelength=legend_formatter.length[-1],
+                fontsize=legend_formatter.fontsize[-1],
             )
             ax.add_artist(leg)
     if show or save or ax_provided:
