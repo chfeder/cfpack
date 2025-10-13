@@ -116,6 +116,7 @@ def print(*args, error=False, warn=False, highlight=False, color="",
         prefix += "["+str(myPE)+"] " # prepend MPI rank
     if not no_prefix: builtin_print(prefix, end="")
     message = "" # default message (can also be 'ERROR: ' or 'WARNING: ')
+    if color[:5].lower() == 'light' and color[-3:].lower() != '_ex': color += "_ex"
     color_str = getattr(Fore, color.upper(), Fore.RESET)
     if highlight:
         color_str = f"{Fore.GREEN}"
@@ -1411,7 +1412,7 @@ def read_ascii(filename, astropy_read=True, read_header=True, quiet=False, max_n
     # ASCII table reading
     from astropy.io.ascii import read as astropy_ascii_read
     from astropy.table import Table
-    if not quiet: print("reading data in '"+filename+"'...")
+    if not quiet: print("reading data in '"+filename+"'...", color='lightblue')
     if astropy_read: # simple, but slow
         tab = astropy_ascii_read(filename, *args, **kwargs)
     else: # manually reading and parsing the file; much faster
