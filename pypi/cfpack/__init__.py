@@ -1432,17 +1432,39 @@ def read_ascii(filename, astropy_read=True, read_header=True, quiet=False, max_n
     return tab
 
 # === write an ASCII file ===
-# === select plain=True, to write list (dat) with lines to file ===
-def write_ascii(filename, dat, format='fixed_width', delimiter="", comment=False, quiet=False, plain=False, *args, **kwargs):
-    if plain:
-        with open(filename, 'w') as file:
-            for line in dat:
-                file.write(f"{line}\n")
-    else:
+# dat should be list of list with col and row entries
+# header should be list of str with header columns
+def write_ascii(filename, dat=[[]], colwidth=20, format='20.10e', header=[], align='right', append=False,
+                header_col_nums=True, astropy=False, delimiter="", comment=False, quiet=False, *args, **kwargs):
+    if not astropy:
+        mode = 'w'
+        if append: mode = 'a'
+        # write header
+        if len(header) > 0:
+            s = ""
+            for ih, h in enumerate(header):
+                scolnum = ""
+                if header_col_nums:
+                    scolnum = f"#{ih+1:02d}_"
+                fmt = str(colwidth)
+                if align == 'right': fmt = '>'+fmt
+                s += f"{scolnum+h:{fmt}}"
+            with open(filename, mode) as file:
+                if len(s) > 0: file.write(f"{s}\n")
+            mode = 'a' # append mode for the following
+        # write data
+        with open(filename, mode) as file:
+            fmt = format
+            if align == 'right': fmt = '>'+fmt
+            for row in dat:
+                s = ''.join(f"{x:{fmt}}" for x in row)
+                if len(s) > 0: file.write(f"{s}\n")
+    else: # astropy write
         from astropy.io.ascii import write as astropy_ascii_write
         astropy_ascii_write(dat, filename, overwrite=True, format=format, delimiter=delimiter, comment=comment, *args, **kwargs)
         if not quiet: print("Table written with (nrow, ncol) = ({:d},{:d}).".format(len(dat), len(dat.columns)))
-    if not quiet: print("File '"+filename+"' written.")
+    if not quiet:
+        print("Written to '"+filename+"'.", color='magenta')
 
 # smoothing/filtering data
 def smooth(x, y, window_npts=11, order=3):
@@ -1533,22 +1555,32 @@ def shock_jump_T(Mach, gamma=5.0/3.0):
 # piecewise polytropic equation of state (polytropic EOS): pres = Konst*dens^Gamma
 def polytropic_eos(dens, mu=2.3):
     class ret:
-        def __init__(self, ):
+        def __init__(self):
+            scalar_input = np.isscalar(dens) # check for scalar input
             # density and polytropic Gamma ranges (Masunaga & Inutsuka 2000)
-            self.dens = dens
-            self.mu = mu
-            self.dens_thresh = [0.0, 2.50e-16, 3.84e-13, 3.84e-8, 3.84e-3] # density threshold to define denisty regimes
+            self.dens = np.atleast_1d(dens) # turn into np.array
+            self.mu = mu # mean particle weight
+            # density threshold to define density regimes
+            self.dens_thresh = [0.0, 2.50e-16, 3.84e-13, 3.84e-8, 3.84e-3, np.inf]
             self.Gamma = [1.0, 1.1, 1.4, 1.1, 5/3] # polytropic Gamma
             self.Konst = [(0.2e5)**2] # polytropic constant
             for i in range(1, 5):
                 self.Konst.append(self.Konst[i-1]*self.dens_thresh[i]**(self.Gamma[i-1]-self.Gamma[i]))
+            print(self.Konst)
             # loop through piecewise ranges to find the requested density regime
-            for i in range(5):
-                if self.dens >= self.dens_thresh[i]:
-                    self.pres = self.Konst[i] * self.dens**self.Gamma[i] # pressure
-                    self.cs = np.sqrt(self.Gamma[i]*self.pres/self.dens) # sound speed
-                    self.temp = self.pres / (self.dens/self.mu/const.m_p) / const.k_b # temperature
-                    break
+            self.pres = np.full_like(self.dens, np.nan, dtype=float)
+            self.temp = np.full_like(self.dens, np.nan, dtype=float)
+            self.cs = np.full_like(self.dens, np.nan, dtype=float)
+            for i in range(len(self.dens_thresh)-1):
+                mask = (self.dens > self.dens_thresh[i]) & (self.dens <= self.dens_thresh[i+1])
+                self.pres[mask] = self.Konst[i] * self.dens[mask]**self.Gamma[i] # pressure
+                self.temp[mask] = self.pres[mask] / (self.dens[mask]/self.mu/const.m_p) / const.k_b # temperature
+                self.cs[mask] = np.sqrt(self.Gamma[i]*self.pres[mask]/self.dens[mask]) # sound speed
+            if scalar_input:
+                self.dens = self.dens[0]
+                self.pres = self.pres[0]
+                self.temp = self.temp[0]
+                self.cs = self.cs[0]
     return ret()
 # === END polytropic_eos ===
 
