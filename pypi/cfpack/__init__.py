@@ -285,8 +285,9 @@ def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel='x', ylabel='y'
 # function to plot a map (of a 2D numpy array)
 def plot_map(image=None, xedges=None, yedges=None, dims=None, vmin=None, vmax=None, log=False,
              symlog=False, symlog_linthresh=1, symlog_linscale=0.01,
-             norm=None, colorbar=True, cmap='magma', cmap_label=None, xlabel=None, ylabel=None, xlog=False, ylog=False,
-             xlim=None, ylim=None, axes_format=[None,None], axes_pos=None, aspect_data='auto', aspect_box=None, dpi=200,
+             norm=None, colorbar=True, colorbar_aspect_scale=1.0, cmap='magma', cmap_label=None,
+             xlabel=None, ylabel=None, xlog=False, ylog=False, xlim=None, ylim=None,
+             axes_format=[None,None], axes_pos=None, aspect_data='auto', aspect_box=None, dpi=200,
              ax=None, show=False, pause=None, save=None, *args, **kwargs):
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
@@ -360,7 +361,8 @@ def plot_map(image=None, xedges=None, yedges=None, dims=None, vmin=None, vmax=No
                 if colorbar == "left":
                     cbar_fmt = {"pos": "left", "offset_pos": "right"}
             divider = make_axes_locatable(ax)
-            cax = divider.append_axes(cbar_fmt["pos"], size="5%", pad=0.05)
+            size = str(colorbar_aspect_scale * 5)+"%"
+            cax = divider.append_axes(cbar_fmt["pos"], size=size, pad=0.05)
             cb = plt.colorbar(map_obj, cax=cax, label=cmap_label, pad=0.01, aspect=25)
             if not log: cb.ax.minorticks_on()
             cb.ax.yaxis.set_ticks_position(cbar_fmt["pos"])
@@ -835,19 +837,19 @@ def debug_decorator(func):
 class timer:
     from datetime import datetime
     # ============= __init__ =============
-    def __init__(self, name="", quiet=True):
+    def __init__(self, name="", verbose=1):
         self.name = name # used to label the instance of timer (if needed)
-        self.quiet = quiet # suppress time starting output
+        self.verbose = verbose # suppress time starting output
         self.start_time = None
         self.stop_time = None
         self.dt = None
         self.start()
     def start(self):
         self.start_time = self.datetime.now()
-        if not self.quiet: print("timer('"+self.name+"'): start time = "+str(self.start_time))
+        if self.verbose: print("timer('"+self.name+"'): start time = "+str(self.start_time), color='lightblue')
     def stop(self):
         self.stop_time = self.datetime.now()
-        if not self.quiet: print("timer('"+self.name+"'): stop time = "+str(self.stop_time))
+        if self.verbose > 1: print("timer('"+self.name+"'): stop time = "+str(self.stop_time), color='lightred')
     def get_dt(self):
         # check whether stop() was called; if not, call it here
         if self.stop_time is None: self.stop()
@@ -856,7 +858,8 @@ class timer:
     def report(self):
         self.stop()
         if self.dt is None: self.get_dt()
-        print("=== timer('"+self.name+"'): start = "+str(self.start_time)+", stop = "+str(self.stop_time)+", runtime = "+str(self.dt), highlight=1, no_prefix=True)
+        print("=== timer('"+self.name+"'): start = "+str(self.start_time)+", stop = "+str(self.stop_time)+\
+                ", runtime = "+str(self.dt), highlight=1, no_prefix=True)
 
 # === class to monitor loop progress ===
 class monitor:
