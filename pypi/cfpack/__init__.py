@@ -284,11 +284,11 @@ def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel='x', ylabel='y'
 # === START plot_map ===
 # function to plot a map (of a 2D numpy array)
 def plot_map(image=None, xedges=None, yedges=None, dims=None, vmin=None, vmax=None, log=False,
-             symlog=False, symlog_linthresh=1, symlog_linscale=0.01,
+             symlog=False, symlog_linthresh=1, symlog_linscale=0.01, tick_color=None,
              norm=None, colorbar=True, colorbar_aspect_scale=1.0, cmap='magma', cmap_label=None,
              xlabel=None, ylabel=None, xlog=False, ylog=False, xlim=None, ylim=None,
-             axes_format=[None,None], axes_pos=None, aspect_data='auto', aspect_box=None, dpi=200,
-             ax=None, show=False, pause=None, save=None, *args, **kwargs):
+             axes_format=[None,None], axes_pos=None, aspect_data='auto', aspect_box=None,
+             dpi=200, ax=None, show=False, pause=None, save=None, *args, **kwargs):
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
     import matplotlib.ticker as ticker
@@ -336,6 +336,7 @@ def plot_map(image=None, xedges=None, yedges=None, dims=None, vmin=None, vmax=No
                 ax.set_yscale('symlog', linthresh=linthresh, linscale=symlog_linscale)
         if axes_format[0] is not None: ax.xaxis.set_major_formatter(ticker.StrMethodFormatter(axes_format[0]))
         if axes_format[1] is not None: ax.yaxis.set_major_formatter(ticker.StrMethodFormatter(axes_format[1]))
+        if tick_color is not None: ax.tick_params(which='both', color=tick_color)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         have_regular_grid_to_plot = False
