@@ -175,7 +175,7 @@ class legend_formatter:
 # === END legend_formatter ===
 
 # === START plot ===
-def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel='x', ylabel='y', label=None,
+def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel=None, ylabel=None, label=None,
          linestyle=None, linewidth=None, marker=None, text=None, shaded_err=None,
          aspect_data=None, aspect_box=None, normalised_coords=False, bar_width=1.0,
          xlog=False, ylog=False, xlim=None, ylim=None, legend_loc='upper left', legend_formatter=None,
