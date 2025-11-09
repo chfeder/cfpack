@@ -1441,6 +1441,13 @@ def read_ascii(filename, astropy_read=True, read_header=True, quiet=False, max_n
 def write_ascii(filename, dat=[[]], colwidth=20, format='20.10e', header=[], align='right', append=False,
                 header_col_nums=True, astropy=False, delimiter="", comment=False, quiet=False, *args, **kwargs):
     if not astropy:
+        def auto_fmt(x, fmt):
+            if isinstance(x, (int, float)):
+                if align == 'right': fmt = '>'+fmt
+                return f"{x:{fmt}}" if fmt else str(x)
+            else:
+                return str(x)
+        # ---
         mode = 'w'
         if append: mode = 'a'
         # write header
@@ -1458,10 +1465,8 @@ def write_ascii(filename, dat=[[]], colwidth=20, format='20.10e', header=[], ali
             mode = 'a' # append mode for the following
         # write data
         with open(filename, mode) as file:
-            fmt = format
-            if align == 'right': fmt = '>'+fmt
             for row in dat:
-                s = ''.join(f"{x:{fmt}}" for x in row)
+                s = ''.join(auto_fmt(x, format) for x in row)
                 if len(s) > 0: file.write(f"{s}\n")
     else: # astropy write
         from astropy.io.ascii import write as astropy_ascii_write
