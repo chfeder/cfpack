@@ -1,8 +1,7 @@
 from setuptools import setup, find_packages
-
 setup(
     name="cfpack",
-    version="0.5.0",
+    version="0.5.1",
     author="Christoph Federrath",
     author_email="christoph.federrath@anu.edu.au",
     description="Christoph Federrath (CF) python package (cfpack)",
