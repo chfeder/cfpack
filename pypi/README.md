@@ -1,16 +1,16 @@
 # Python tools written by Christoph Federrath #
 
-### Copyright notes ###
+### Website ###
 
-See LICENSE file.
+* https://www.mso.anu.edu.au/~chfeder/codes/cfpack/cfpack.html
 
 ### Main contact ###
 
 * Christoph Federrath (christoph.federrath@anu.edu.au)
 
-### Website ###
+### Copyright notes ###
 
-* https://www.mso.anu.edu.au/~chfeder/codes/cfpack/cfpack.html
+See LICENSE file.
 
 ### Disclaimer ###
 
