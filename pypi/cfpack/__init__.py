@@ -276,7 +276,8 @@ def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel=None, ylabel=No
                         if ll == ul: new_handles[iul].append(legend_handles[ill])
                     new_handles[iul] = tuple(new_handles[iul])
                 new_labels = unique_labels.tolist()
-                ax.legend(new_handles, new_labels, loc=legend_loc, *args, **kwargs)
+                legend_kwargs = {k: v for k, v in kwargs.items() if k not in ["color", "markersize", "markeredgecolor", "markerfacecolor"]}
+                ax.legend(new_handles, new_labels, loc=legend_loc, *args, **legend_kwargs)
     ret = show_or_save_plot(ax, show=show, pause=pause, save=save) # now show or save the finished figure, and destroy it afterwards
     return ret
 # === END plot ===
