@@ -288,7 +288,7 @@ def plot_map(image=None, xedges=None, yedges=None, dims=None, vmin=None, vmax=No
              symlog=False, symlog_linthresh=1, symlog_linscale=0.01, tick_color=None,
              norm=None, colorbar=True, colorbar_aspect_scale=1.0, cmap='magma', cmap_label=None,
              xlabel=None, ylabel=None, xlog=False, ylog=False, xlim=None, ylim=None,
-             axes_format=[None,None], axes_pos=None, aspect_data='auto', aspect_box=None,
+             axes_format=[None,None], axes_ticks=[None,None], axes_pos=None, aspect_data='auto', aspect_box=None,
              dpi=200, ax=None, show=False, pause=None, save=None, *args, **kwargs):
     import matplotlib.pyplot as plt
     import matplotlib.colors as colors
@@ -338,6 +338,8 @@ def plot_map(image=None, xedges=None, yedges=None, dims=None, vmin=None, vmax=No
         if axes_format[0] is not None: ax.xaxis.set_major_formatter(ticker.StrMethodFormatter(axes_format[0]))
         if axes_format[1] is not None: ax.yaxis.set_major_formatter(ticker.StrMethodFormatter(axes_format[1]))
         if tick_color is not None: ax.tick_params(which='both', color=tick_color)
+        if axes_ticks[0] is not None: ax.set_xticks(axes_ticks[0])
+        if axes_ticks[1] is not None: ax.set_yticks(axes_ticks[1])
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         have_regular_grid_to_plot = False
@@ -1709,7 +1711,7 @@ def rebin(inarray, outshape):
     inshape = inarray.shape # get shape of input array
     dims = len(inshape) # get dimensionality
     # turn outshape into list if necessary
-    if not isinstance(outshape, list) and not isinstance(outshape, tuple):
+    if not isinstance(outshape, (np.ndarray, list, tuple)):
         outshape = [outshape]
     # check consistency in dimensionality
     if len(outshape) != dims:
@@ -1735,7 +1737,7 @@ def congrid(inarray, outshape, method="linear"):
     inshape = inarray.shape # get shape of input array
     dims = len(inshape) # get dimensionality
     # turn outshape into list if necessary
-    if not isinstance(outshape, list) and not isinstance(outshape, tuple):
+    if not isinstance(outshape, (np.ndarray, list, tuple)):
         outshape = [outshape]
     # check consistency in dimensionality
     if len(outshape) != dims:
