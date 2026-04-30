@@ -229,7 +229,7 @@ def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel=None, ylabel=No
                     alpha_err = shaded_err[1]
                 else:
                     color_err = plt.gca().lines[-1].get_color()
-                    alpha_err = 0.5
+                    alpha_err = 0.2
                 ax.fill_between(x, y-np.abs(yerr[0]), y+np.abs(yerr[1]), color=color_err, alpha=alpha_err, linewidth=0.0, label=label)
         # create a stand-alone legend item for more control
         if legend_formatter is not None:
