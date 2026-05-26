@@ -1183,7 +1183,8 @@ def get_spectrum(data_in, ncmp=1, binning='spherical', sum=False, return_ft_data
     if binning == 'cylindrical': # construct absolute k_perp and k_para for binning below
         k_abs_perp = np.sqrt((k_perp**2).sum(axis=0))
         k_abs_para = np.abs(k_para)
-    bins = np.arange(np.max(ke)+2) - 0.5 # k bins for 1D spectrum
+    kmax = int(np.max(np.abs(k))) # Nyquist frequency
+    bins = np.arange(kmax + 2) - 0.5 # k bins for 1D spectrum
     # do Fourier transformation
     def fourier_transform(arr):
         arr_ft = []
