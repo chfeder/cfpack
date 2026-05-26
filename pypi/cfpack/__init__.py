@@ -164,7 +164,7 @@ class legend_formatter:
         self.length = [] # length of the symbol/line section
         self.fontsize = [] # fontsize
     # add new legend item
-    def add(self, pos=(0.5, 0.5), loc='center left', textpad=0.1, length=1.25, fontsize=None):
+    def add(self, pos=(0.5, 0.5), loc='center left', textpad=0.25, length=1.25, fontsize=None):
         self.pos.append(pos)
         self.loc.append(loc)
         self.textpad.append(textpad)
@@ -229,7 +229,7 @@ def plot(y=None, x=None, yerr=None, xerr=None, type=None, xlabel=None, ylabel=No
                     alpha_err = shaded_err[1]
                 else:
                     color_err = plt.gca().lines[-1].get_color()
-                    alpha_err = 0.2
+                    alpha_err = 0.1
                 ax.fill_between(x, y-np.abs(yerr[0]), y+np.abs(yerr[1]), color=color_err, alpha=alpha_err, linewidth=0.0, label=label)
         # create a stand-alone legend item for more control
         if legend_formatter is not None:
@@ -1316,7 +1316,7 @@ def round(xin, nfigs=3, str_ret=False):
             # in case the requested number of nfigs is > the intrinsic nfigs of x
             if len(scale_part)-offset < nfigs:
                 scale_part += "0"*(nfigs-(len(scale_part)-offset)-1) # add trailing zeros
-            if len(dot_separated[0]) >= nfigs: # special treatment
+            if len(dot_separated[0]) >= nfigs and dot_separated[0] != '0': # special treatment
                 scale_part = dot_separated[0]
             # put string back together
             if negative_x: # add leading minus sign if needed
