@@ -1579,7 +1579,6 @@ def polytropic_eos(dens, mu=2.3):
             self.Konst = [(0.2e5)**2] # polytropic constant
             for i in range(1, 5):
                 self.Konst.append(self.Konst[i-1]*self.dens_thresh[i]**(self.Gamma[i-1]-self.Gamma[i]))
-            print(self.Konst)
             # loop through piecewise ranges to find the requested density regime
             self.pres = np.full_like(self.dens, np.nan, dtype=float)
             self.temp = np.full_like(self.dens, np.nan, dtype=float)
