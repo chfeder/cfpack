@@ -29,9 +29,12 @@ class browser_control:
         if self.headless:
             options = webdriver.ChromeOptions()
             options.add_argument("headless")
-            if self.verbose: print("Running in 'headless' mode...")
-        # open driver
+            if self.verbose:
+                print("Running in 'headless' mode...", color='green')
+                if self.verbose < 1: print("Set verbose=2 for more output while running...")
+        # open driver and set default window size
         self.driver = webdriver.Chrome(options=options)
+        self.driver.set_window_size(1200, 1200)
 
     # close web driver window
     def close(self):
@@ -39,7 +42,7 @@ class browser_control:
 
     # function to load URL
     def load_url(self, url="https://www.mso.anu.edu.au/~chfeder/index.html", wait=None, sleep=None, wait_until_element=""):
-        if self.verbose > 1 or self.headless: print("loading URL '"+url+"'...")
+        if self.verbose > 1: print("loading URL '"+url+"'...")
         self.driver.get(url)
         try:
             # wait max 'wait' seconds, or until page is loaded
@@ -61,7 +64,7 @@ class browser_control:
 
     # return element to find (default: by "xpath"); and perform an action, e.g., click (optional)
     def find_element(self, element_str="", by="xpath", wait=None, sleep=None, click=False, enter_text="", select="", visible=None):
-        if self.verbose > 1 or self.headless: print("looking for element '"+element_str+"'...")
+        if self.verbose > 1: print("looking for element '"+element_str+"'...")
         obj = WebDriverWait(self.driver, self.my_wait(wait)).until(EC.presence_of_element_located((by,element_str)))
         self.my_sleep(sleep) # sleep a bit if requested
         if visible is not None:
@@ -85,7 +88,7 @@ class browser_control:
 
     # return list of elements to find
     def find_elements(self, element_str="", by="xpath", wait=None, sleep=None):
-        if self.verbose > 1 or self.headless: print("looking for elements '"+element_str+"'...")
+        if self.verbose > 1: print("looking for elements '"+element_str+"'...")
         obj = WebDriverWait(self.driver, self.my_wait(wait)).until(EC.presence_of_all_elements_located((by,element_str)))
         self.my_sleep(sleep) # sleep a bit if requested
         return obj
